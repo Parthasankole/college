@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>College</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f8;
+    }
+    .sidebar {
+      width: 220px;
+      background-color: #ffffff;
+      height: 100vh;
+      position: fixed;
+      border-right: 1px solid #ddd;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .sidebar h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .folder-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .folder-list li {
+      padding: 10px 0 10px 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .folder-list li.selected {
+      background: #e7f7f3;
+      border-radius: 6px;
+    }
+    .folder-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .add-folder-btn {
+      display: inline-block;
+      margin: 10px 0 0 0;
+      background: #25a18e;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 22px;
+      text-align: center;
+      line-height: 32px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .add-folder-btn:hover {
+      background: #18806e;
+    }
+    .delete-folder-btn {
+      background: none;
+      border: none;
+      color: #d9534f;
+      font-size: 18px;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+    .main {
+      margin-left: 240px;
+      padding: 20px;
+    }
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 20px;
+    }
+    .file {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+      border-radius: 8px;
+      cursor: pointer;
+      position: relative;
+    }
+    .file:hover {
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .delete-file-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: #d9534f;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 14px;
+      cursor: pointer;
+      display: none;
+    }
+    .file:hover .delete-file-btn {
+      display: block;
+    }
+    .overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .prompt-box {
+      background: #fff;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.15);
+      min-width: 300px;
+      text-align: center;
+    }
+    .prompt-box input[type="text"] {
+      width: 90%;
+      padding: 8px;
+      margin: 10px 0 20px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    .prompt-box input[type="file"] {
+      margin: 10px 0 20px 0;
+      font-size: 15px;
+    }
+    .prompt-box button {
+      padding: 8px 18px;
+      margin: 0 8px;
+      border: none;
+      border-radius: 5px;
+      background: #25a18e;
+      color: #fff;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .prompt-box button.skip {
+      background: #aaa;
+    }
+    .user-info {
+      margin-bottom: 20px;
+      background: #e7f7f3;
+      padding: 12px 18px;
+      border-radius: 8px;
+      color: #222;
+      font-size: 16px;
+    }
+    .user-info span {
+      font-weight: bold;
+      color: #25a18e;
+    }
+    .timetable-icon {
+      display: inline-block;
+      margin-left: 10px;
+      cursor: pointer;
+      vertical-align: middle;
+      font-size: 22px;
+      background: #fff;
+      border-radius: 50%;
+      border: 1px solid #25a18e;
+      width: 36px;
+      height: 36px;
+      text-align: center;
+      line-height: 36px;
+      color: #25a18e;
+      transition: background 0.2s;
+    }
+    .timetable-icon:hover {
+      background: #25a18e;
+      color: #fff;
+    }
+    .file-preview-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+    .file-preview-box {
+      background: #fff;
+      padding: 24px 32px;
+      border-radius: 10px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+      min-width: 320px;
+      max-width: 90vw;
+      max-height: 90vh;
+      text-align: center;
+      position: relative;
+    }
+    .file-preview-box button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #25a18e;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .file-preview-content {
+      margin-top: 20px;
+      max-height: 70vh;
+      overflow: auto;
+    }
+    .file-preview-content img, .file-preview-content embed {
+      max-width: 100%;
+      max-height: 60vh;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    .file-preview-content a {
+      color: #25a18e;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+    .add-file-btn {
+      display: inline-block;
+      margin: 10px 0 20px 0;
+      background: #25a18e;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      font-size: 26px;
+      text-align: center;
+      line-height: 38px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .add-file-btn:hover {
+      background: #18806e;
+    }
+    @media (max-width: 600px) {
+      .sidebar {
+        width: 100vw;
+        height: auto;
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+        padding: 10px;
+      }
+      .main {
+        margin-left: 0;
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="overlay" class="overlay" style="display:none;">
+    <div class="prompt-box" id="promptBox">
+      <!-- JS will fill this -->
+    </div>
+  </div>
+  <div id="filePreviewOverlay" class="file-preview-overlay" style="display:none;">
+    <div class="file-preview-box">
+      <button onclick="closeFilePreview()">&times;</button>
+      <div class="file-preview-content" id="filePreviewContent"></div>
+    </div>
+  </div>
+  <div class="sidebar">
+    <h2>🏫 College</h2>
+    <ul class="folder-list" id="folderList"></ul>
+    <button class="add-folder-btn" title="Create New Folder" onclick="showAddFolderPrompt()">+</button>
+  </div>
+  <div class="main">
+    <div id="userInfo" class="user-info" style="display:none;"></div>
+    <h1 id="folderTitle">Files</h1>
+    <button class="add-file-btn" title="Add File" onclick="showAddFilePrompt()" style="display:none;" id="addFileBtn">+</button>
+    <div class="file-grid" id="fileGrid"></div>
+  </div>
+  <script>
+    // Questions to ask
+    const questions = [
+      { key: "college", label: "Enter your College Name" },
+      { key: "course", label: "Enter your Course" },
+      { key: "year", label: "Enter your Year" },
+      { key: "timetable", label: "Upload your Timetable (pdf, image, or any file)" }
+    ];
+    let answers = {};
+    let current = 0;
+    let timetableFile = null;
+    let timetableFileUrl = null;
+
+    // Folder and file management
+    let folders = [];
+    let selectedFolder = null;
+
+    // --- Persistence helpers ---
+    function saveFolders() {
+      localStorage.setItem('collegeFolders', JSON.stringify(folders.map(f => ({
+        name: f.name,
+        files: f.files.map(file => ({ name: file.name }))
+      }))));
+    }
+    function loadFolders() {
+      const data = localStorage.getItem('collegeFolders');
+      if (data) {
+        const arr = JSON.parse(data);
+        folders = arr.map(f => ({ name: f.name, files: f.files.map(file => ({ name: file.name, file: null, url: null })) }));
+      }
+    }
+
+    // --- Modified renderFolders for accessibility ---
+    function renderFolders() {
+      const folderList = document.getElementById('folderList');
+      folderList.innerHTML = '';
+      folders.forEach((folder, idx) => {
+        const li = document.createElement('li');
+        li.className = (selectedFolder === idx) ? 'selected' : '';
+        li.innerHTML = `<span tabindex="0" aria-label="Open folder ${folder.name}" onclick="selectFolder(${idx})" onkeydown="if(event.key==='Enter'){selectFolder(${idx})}">📁 ${folder.name}</span>
+          <span class="folder-actions">
+            <button class="delete-folder-btn" title="Delete Folder" aria-label="Delete folder" onclick="deleteFolder(event,${idx})">&times;</button>
+          </span>`;
+        folderList.appendChild(li);
+      });
+    }
+
+    function renderFiles() {
+      const fileGrid = document.getElementById('fileGrid');
+      const addFileBtn = document.getElementById('addFileBtn');
+      fileGrid.innerHTML = '';
+      if (selectedFolder === null) {
+        document.getElementById('folderTitle').textContent = "Files";
+        addFileBtn.style.display = "none";
+        return;
+      }
+      document.getElementById('folderTitle').textContent = folders[selectedFolder].name + " Files";
+      addFileBtn.style.display = "inline-block";
+      folders[selectedFolder].files.forEach((file, idx) => {
+        const ext = file.name.split('.').pop().toLowerCase();
+        let icon = "📄";
+        if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(ext)) icon = "🖼️";
+        else if (ext === "pdf") icon = "📑";
+        else if (ext === "txt") icon = "📄";
+        else if (ext === "doc" || ext === "docx") icon = "📃";
+        fileGrid.innerHTML += `
+          <div class="file" onclick="previewFolderFile(${idx})">
+            ${icon} ${file.name}
+            <button class="delete-file-btn" title="Delete File" onclick="deleteFile(event,${idx})">&times;</button>
+          </div>
+        `;
+      });
+    }
+
+    function showAddFolderPrompt() {
+      document.getElementById('overlay').style.display = 'flex';
+      document.getElementById('promptBox').innerHTML = `
+        <div>
+          <div style="font-size:18px;margin-bottom:10px;">Enter Folder Name</div>
+          <input id="folderNameInput" type="text" placeholder="Folder name..." autofocus />
+          <br>
+          <button onclick="addFolder()">Create</button>
+          <button class="skip" onclick="closePrompt()">Cancel</button>
+        </div>
+      `;
+      setTimeout(() => {
+        document.getElementById('folderNameInput').focus();
+      }, 100);
+    }
+
+    // --- Modified addFolder for validation ---
+    function addFolder() {
+      const name = document.getElementById('folderNameInput').value.trim();
+      if (!name) {
+        alert("Folder name cannot be empty.");
+        return;
+      }
+      if (folders.some(f => f.name.toLowerCase() === name.toLowerCase())) {
+        alert("Folder name already exists.");
+        return;
+      }
+      folders.push({ name, files: [] });
+      selectedFolder = folders.length - 1;
+      saveFolders();
+      renderFolders();
+      renderFiles();
+      closePrompt();
+    }
+
+    function deleteFolder(event, idx) {
+      event.stopPropagation();
+      if (confirm("Delete this folder and all its files?")) {
+        folders.splice(idx, 1);
+        if (selectedFolder === idx) selectedFolder = null;
+        else if (selectedFolder > idx) selectedFolder--;
+        saveFolders();
+        renderFolders();
+        renderFiles();
+      }
+    }
+
+    function selectFolder(idx) {
+      selectedFolder = idx;
+      renderFolders();
+      renderFiles();
+    }
+
+    function showAddFilePrompt() {
+      if (selectedFolder === null) return;
+      document.getElementById('overlay').style.display = 'flex';
+      document.getElementById('promptBox').innerHTML = `
+        <div>
+          <div style="font-size:18px;margin-bottom:10px;">Upload File</div>
+          <input id="folderFileInput" type="file" />
+          <br>
+          <button onclick="addFileToFolder()">Add</button>
+          <button class="skip" onclick="closePrompt()">Cancel</button>
+        </div>
+      `;
+    }
+
+    // --- Modified addFileToFolder to persist ---
+    function addFileToFolder() {
+      const fileInput = document.getElementById('folderFileInput');
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const fileObj = {
+          name: file.name,
+          file: file,
+          url: URL.createObjectURL(file)
+        };
+        folders[selectedFolder].files.push(fileObj);
+        saveFolders();
+        renderFiles();
+      }
+      closePrompt();
+    }
+
+    function deleteFile(event, idx) {
+      event.stopPropagation();
+      if (confirm("Delete this file?")) {
+        folders[selectedFolder].files.splice(idx, 1);
+        saveFolders();
+        renderFiles();
+      }
+    }
+
+    function previewFolderFile(idx) {
+      const file = folders[selectedFolder].files[idx];
+      if (!file) return;
+      if (!file.file || !file.url) {
+        document.getElementById('filePreviewContent').innerHTML = `<div style="color:#d9534f;">File preview unavailable. Please re-upload this file.</div>`;
+        document.getElementById('filePreviewOverlay').style.display = "flex";
+        return;
+      }
+      const ext = file.name.split('.').pop().toLowerCase();
+      let content = "";
+      if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(ext)) {
+        content = `<img src="${file.url}" alt="Image" />`;
+      } else if (ext === "pdf") {
+        content = `<embed src="${file.url}" type="application/pdf" width="400" height="500" />`;
+      } else if (["txt"].includes(ext)) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('filePreviewContent').innerHTML = `<pre style="text-align:left;">${e.target.result}</pre>`;
+        };
+        reader.readAsText(file.file);
+        content = `<div>Loading text file...</div>`;
+      } else {
+        content = `<a href="${file.url}" download="${file.name}">Download ${file.name}</a>`;
+      }
+      document.getElementById('filePreviewContent').innerHTML = content;
+      document.getElementById('filePreviewOverlay').style.display = "flex";
+    }
+
+    function closePrompt() {
+      document.getElementById('overlay').style.display = 'none';
+    }
+
+    // Existing code for user info and timetable
+    function showPrompt() {
+      if (current >= questions.length) {
+        document.getElementById('overlay').style.display = 'none';
+        showUserInfo();
+        return;
+      }
+      const q = questions[current];
+      document.getElementById('overlay').style.display = 'flex';
+      if (q.key === "timetable") {
+        document.getElementById('promptBox').innerHTML = `
+          <div>
+            <div style="font-size:18px;margin-bottom:10px;">${q.label}</div>
+            <input id="promptFile" type="file" accept=".pdf,image/*,.txt,.doc,.docx" />
+            <br>
+            <button onclick="submitFilePrompt()">Submit</button>
+            <button class="skip" onclick="skipPrompt()">Skip</button>
+          </div>
+        `;
+      } else {
+        document.getElementById('promptBox').innerHTML = `
+          <div>
+            <div style="font-size:18px;margin-bottom:10px;">${q.label}</div>
+            <input id="promptInput" type="text" placeholder="Type here or skip..." autofocus />
+            <br>
+            <button onclick="submitPrompt()">Submit</button>
+            <button class="skip" onclick="skipPrompt()">Skip</button>
+          </div>
+        `;
+        setTimeout(() => {
+          document.getElementById('promptInput').focus();
+        }, 100);
+      }
+    }
+
+    function submitPrompt() {
+      const val = document.getElementById('promptInput').value.trim();
+      answers[questions[current].key] = val || "(skipped)";
+      current++;
+      showPrompt();
+    }
+
+    function skipPrompt() {
+      answers[questions[current].key] = "(skipped)";
+      if (questions[current].key === "timetable") {
+        timetableFile = null;
+        timetableFileUrl = null;
+      }
+      current++;
+      showPrompt();
+    }
+
+    function submitFilePrompt() {
+      const fileInput = document.getElementById('promptFile');
+      if (fileInput.files.length > 0) {
+        timetableFile = fileInput.files[0];
+        answers[questions[current].key] = timetableFile.name;
+        timetableFileUrl = URL.createObjectURL(timetableFile);
+      } else {
+        answers[questions[current].key] = "(skipped)";
+        timetableFile = null;
+        timetableFileUrl = null;
+      }
+      current++;
+      showPrompt();
+    }
+
+    function showUserInfo() {
+      const info = [];
+      if (answers.college && answers.college !== "(skipped)") info.push(`College: <span>${answers.college}</span>`);
+      if (answers.course && answers.course !== "(skipped)") info.push(`Course: <span>${answers.course}</span>`);
+      if (answers.year && answers.year !== "(skipped)") info.push(`Year: <span>${answers.year}</span>`);
+      if (answers.timetable && answers.timetable !== "(skipped)") {
+        info.push(`Timetable: <span>${answers.timetable}</span>
+          <span class="timetable-icon" title="View Timetable" onclick="showFilePreview()" tabindex="0">📅</span>`);
+      }
+      if (info.length > 0) {
+        document.getElementById('userInfo').innerHTML = info.join(" &nbsp; | &nbsp; ");
+        document.getElementById('userInfo').style.display = "block";
+      }
+    }
+
+    window.showFilePreview = function() {
+      if (!timetableFile || !timetableFileUrl) {
+        document.getElementById('filePreviewContent').innerHTML = `<div style="color:#d9534f;">Timetable preview unavailable. Please re-upload your timetable.</div>`;
+        document.getElementById('filePreviewOverlay').style.display = "flex";
+        return;
+      }
+      const ext = timetableFile.name.split('.').pop().toLowerCase();
+      let content = "";
+      if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(ext)) {
+        content = `<img src="${timetableFileUrl}" alt="Timetable Image" />`;
+      } else if (ext === "pdf") {
+        content = `<embed src="${timetableFileUrl}" type="application/pdf" width="400" height="500" />`;
+      } else if (["txt"].includes(ext)) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('filePreviewContent').innerHTML = `<pre style="text-align:left;">${e.target.result}</pre>`;
+        };
+        reader.readAsText(timetableFile);
+        content = `<div>Loading text file...</div>`;
+      } else {
+        content = `<a href="${timetableFileUrl}" download="${timetableFile.name}">Download ${timetableFile.name}</a>`;
+      }
+      document.getElementById('filePreviewContent').innerHTML = content;
+      document.getElementById('filePreviewOverlay').style.display = "flex";
+    };
+
+    window.closeFilePreview = function() {
+      document.getElementById('filePreviewOverlay').style.display = "none";
+    };
+
+    // On load, restore folders ---
+    window.onload = function() {
+      loadFolders();
+      showPrompt();
+      renderFolders();
+      renderFiles();
+    }
+  </script>
+</body>
+</html>
