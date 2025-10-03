@@ -491,9 +491,26 @@
       document.getElementById('overlay').style.display = 'none';
     }
 
-    // Existing code for user info and timetable
+    // Fetch user info from backend
+    async function fetchUserInfo() {
+      const res = await fetch('http://localhost:3000/api/user');
+      answers = await res.json() || {};
+    }
+
+    // Save user info to backend
+    async function saveUserInfo() {
+      await fetch('http://localhost:3000/api/user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(answers)
+      });
+    }
+
+    // Show prompt for missing/skipped info
     function showPrompt() {
-      if (current >= questions.length) {
+      // Find first missing/skipped question
+      current = questions.findIndex(q => !answers[q.key] || answers[q.key] === "(skipped)");
+      if (current === -1) {
         document.getElementById('overlay').style.display = 'none';
         showUserInfo();
         return;
@@ -568,9 +585,20 @@
           <span class="timetable-icon" title="View Timetable" onclick="showFilePreview()" tabindex="0">📅</span>`);
       }
       if (info.length > 0) {
-        document.getElementById('userInfo').innerHTML = info.join(" &nbsp; | &nbsp; ");
+        document.getElementById('userInfo').innerHTML = info.join(" &nbsp; | &nbsp; ") +
+          ` <span title="Edit Info" style="cursor:pointer;font-size:18px;margin-left:10px;" onclick="showEditPrompt()">✏️</span>`;
         document.getElementById('userInfo').style.display = "block";
       }
+    }
+
+    // Edit info icon handler
+    function showEditPrompt() {
+      // Reset skipped fields to ask again
+      questions.forEach(q => {
+        if (!answers[q.key] || answers[q.key] === "(skipped)") return;
+        answers[q.key] = ""; // Clear to re-ask
+      });
+      showPrompt();
     }
 
     window.showFilePreview = function() {
@@ -603,9 +631,9 @@
       document.getElementById('filePreviewOverlay').style.display = "none";
     };
 
-    // On load, restore folders ---
-    window.onload = function() {
-      loadFolders();
+    // On load, fetch info and show prompt if needed
+    window.onload = async function() {
+      await fetchUserInfo();
       showPrompt();
       renderFolders();
       renderFiles();
@@ -613,4 +641,3 @@
   </script>
 </body>
 </html>
-
